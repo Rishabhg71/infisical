@@ -231,6 +231,20 @@ var loginCmd = &cobra.Command{
 				}
 
 			}
+			
+			domainFlagValue, err := cmd.Flags().GetString("domain")
+			if err != nil {
+				util.HandleError(err)
+			}
+			
+			if os.Getenv("INFISICAL_API_URL") != "" {
+				domainFlagValue = os.Getenv("INFISICAL_API_URL")
+			}
+
+			if domainFlagValue != "" {
+				domainQuery = false
+				setDomain(domainFlagValue)
+			}
 
 			//prompt user to select domain between Infisical cloud and self hosting
 			if domainQuery {
@@ -520,6 +534,20 @@ func DomainOverridePrompt() (bool, error) {
 	}
 
 	return selectedOption == OVERRIDE, err
+}
+
+func setDomain(domain string) error {
+	// Will set the domain if the --domain flag was set
+
+	_, err := url.ParseRequestURI(domain)
+	if err != nil {
+		return errors.New("this is an invalid url")
+	}
+
+	domain = strings.TrimRight(domain, "/api")
+	config.INFISICAL_URL = fmt.Sprintf("%s/api", domain)
+	config.INFISICAL_LOGIN_URL = fmt.Sprintf("%s/login", domain)
+	return nil
 }
 
 func askForDomain() error {
